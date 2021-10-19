@@ -3,6 +3,7 @@ package hw4_1;
 public class Words extends Thread {
     private final Object mon = new Object();
     private volatile char currentLetter = 'A';
+    private final int num = 5;
 
     /*1. Создать три потока, каждый из которых выводит определенную букву (A, B и C) 5 раз
          (порядок – ABСABСABС).
@@ -10,80 +11,48 @@ public class Words extends Thread {
      */
     public static void main(String[] args) {
         Words words = new Words();
-        Thread threadA = new Thread(){
+        Thread threadA = new Thread() {
             @Override
             public void run() {
-                words.printA();
+                words.printA('A', 'B');
             }
         };
-        Thread threadB = new Thread(){
+        Thread threadB = new Thread() {
             @Override
             public void run() {
-                for (int i = 0; i < 5; i++) {
-                    words.printB();
-                }
+                words.printA('B', 'C');
             }
         };
-        Thread threadC = new Thread(){
+        Thread threadC = new Thread() {
             @Override
             public void run() {
-                words.printC();
+                words.printA('C', 'A');
             }
         };
 
         threadA.start();
         threadB.start();
         threadC.start();
-
     }
 
-    public void printA() {
+    public void printA(char current, char next) {
         synchronized (mon) {
+            boolean interrupted = false;
             try {
-                for (int i = 0; i < 5; i++) {
-                    while (currentLetter != 'A') {
+                for (int i = 0; i < num; i++) {
+                    if (Thread.currentThread().isInterrupted() || interrupted) {
+                        break;
+                    }
+                    while (currentLetter != current) {
                         mon.wait();
                     }
-                    System.out.print("A");
-                    currentLetter = 'B';
+                    System.out.print(current);
+                    currentLetter = next;
                     mon.notifyAll();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void printB() {
-        synchronized (mon) {
-            try {
-                for (int i = 0; i < 5; i++) {
-                    while (currentLetter != 'B') {
-                        mon.wait();
-                    }
-                    System.out.print("B");
-                    currentLetter = 'C';
-                    mon.notifyAll();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void printC() {
-        synchronized (mon) {
-            try {
-                for (int i = 0; i < 5; i++) {
-                    while (currentLetter != 'C') {
-                        mon.wait();
-                    }
-                    System.out.print("C");
-                    currentLetter = 'A';
-                    mon.notifyAll();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                interrupted = true;
+//                e.printStackTrace();
             }
         }
     }
